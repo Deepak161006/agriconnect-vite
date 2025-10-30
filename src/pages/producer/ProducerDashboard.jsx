@@ -35,7 +35,7 @@ function ProducerDashboard() {
         console.error('Failed to fetch products:', err);
       }
     };
-
+    
     fetchMyProducts();
   }, []); // [] runs once on page load
 
