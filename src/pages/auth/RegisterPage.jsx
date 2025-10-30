@@ -30,7 +30,7 @@ function RegisterPage() {
   // --- API Call ---
   try {
     // 1. Call your backend API's /register endpoint
-    await axios.post('http://localhost:5001/api/auth/register', {
+    await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
       fullName,
       email,
       password,

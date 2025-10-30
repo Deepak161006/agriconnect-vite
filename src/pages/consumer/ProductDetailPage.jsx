@@ -24,7 +24,7 @@ function ProductDetailPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:5001/api/products/${productId}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${productId}`);
         setProduct(res.data);
       } catch (err) {
         console.error('Failed to fetch product:', err);
@@ -69,7 +69,7 @@ function ProductDetailPage() {
 
     try {
       // Call the API to create the order
-      await axios.post('http://localhost:5001/api/orders', orderData, config);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, config);
 
       alert('Order placed successfully!');
       navigate('/my-orders'); // Navigate to the "My Orders" page

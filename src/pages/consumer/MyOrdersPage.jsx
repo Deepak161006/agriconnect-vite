@@ -36,7 +36,7 @@ function MyOrdersPage() {
       };
 
       try {
-        const res = await axios.get('http://localhost:5001/api/orders/my-orders', config);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, config);
         // Sort by newest first
         setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {

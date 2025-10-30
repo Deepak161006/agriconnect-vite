@@ -38,7 +38,7 @@ function OrdersPage() {
       };
 
       try {
-        const res = await axios.get('http://localhost:5001/api/orders/incoming', config);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/producer-orders`, config);
         // Sort by newest first
         setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
@@ -63,7 +63,7 @@ function OrdersPage() {
     try {
       // Call the PUT endpoint
       const res = await axios.put(
-        `http://localhost:5001/api/orders/${orderId}/status`,
+        `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
         { status: newStatus }, // Send the new status in the body
         config
       );

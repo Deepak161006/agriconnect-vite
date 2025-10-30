@@ -78,7 +78,7 @@ function AddProductPage() {
 
     try {
       // Call the API
-      await axios.post('http://localhost:5001/api/products', productData, config);
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/producer/products`, productData, config);
 
       alert(`"${productData.name}" has been successfully listed!`);
       navigate('/producer/dashboard');
