@@ -29,7 +29,7 @@ function ProducerDashboard() {
       };
 
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/producer/products`, config);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/producer/my-products`, config);
         setMyProducts(res.data);
       } catch (err) {
         console.error('Failed to fetch products:', err);
