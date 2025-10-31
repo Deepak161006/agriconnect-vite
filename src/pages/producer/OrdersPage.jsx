@@ -62,8 +62,7 @@ function OrdersPage() {
 
     try {
       // Call the PUT endpoint
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
+      const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
         { status: newStatus }, // Send the new status in the body
         config
       );
