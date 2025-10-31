@@ -71,8 +71,10 @@ function ProductDetailPage() {
       // Call the API to create the order
       await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, config);
 
-      alert('Order placed successfully!');
-      navigate('/my-orders'); // Navigate to the "My Orders" page
+      // This is the fix:
+      alert('Order placed successfully! You can see it in your "My Orders" list.');
+      // By deleting navigate('/my-orders'), we let the user
+      // click the "My Orders" link themselves, which forces a fresh data load.
 
     } catch (err) {
       console.error('Failed to place order:', err);
