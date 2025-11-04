@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// ... (statusConfig, OrdersPage, navigate, orders state... all the same) ...
 const statusConfig = {
   Processing: { text: 'Processing', class: 'bg-blue-100 text-blue-800' },
   Shipped: { text: 'Shipped', class: 'bg-yellow-100 text-yellow-800' },
@@ -62,9 +61,15 @@ function OrdersPage() {
   };
 
   const getNextAction = (status) => {
-    if (status === 'Processing') { /* ... (no change) ... */ }
-    if (status === 'Shipped') { /* ... (no change) ... */ }
-    if (status === 'Delivered') { /* ... (no change) ... */ }
+    if (status === 'Processing') {
+      return { text: 'Mark as Shipped', nextStatus: 'Shipped', disabled: false };
+    }
+    if (status === 'Shipped') {
+      return { text: 'Mark as Delivered', nextStatus: 'Delivered', disabled: false };
+    }
+    if (status === 'Delivered') {
+      return { text: 'Completed', nextStatus: null, disabled: true };
+    }
     return { text: '', nextStatus: null, disabled: true };
   };
   // -----------------------------------------------------------------
@@ -81,12 +86,11 @@ function OrdersPage() {
           <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
             <div className="shadow-lg overflow-hidden border-b border-gray-200 sm:rounded-lg">
               <table className="min-w-full divide-y divide-gray-200">
-                {/* --- 1. UPDATE THE TABLE HEADER --- */}
+                {/* --- (No change to the table header) --- */}
                 <thead className="bg-gray-200">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Customer</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Product</th>
-                    {/* --- ADD NEW HEADER --- */}
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                       Delivery Address
                     </th>
@@ -94,7 +98,8 @@ function OrdersPage() {
                     <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                {/* --- 2. UPDATE THE TABLE BODY --- */}
+                
+                {/* --- UPDATE THE TABLE BODY --- */}
                 <tbody className="bg-white divide-y divide-gray-200">
                   {orders.length > 0 ? (
                     orders.map((order) => {
@@ -107,13 +112,22 @@ function OrdersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             {order.productDetails.name} ({order.productDetails.quantity})
                           </td>
-                          {/* --- ADD NEW DATA CELL --- */}
+                          
+                          {/* --- This is the updated part --- */}
                           <td className="px-6 py-4 text-sm text-gray-500">
-                            {/* This will format the address object nicely */}
-                            <div>{order.deliveryAddress.houseNo}, {order.deliveryAddress.area}</div>
-                            <div>{order.deliveryAddress.city}, {order.deliveryAddress.state}</div>
-                            <div>{order.deliveryAddress.pincode}</div>
+                            {/* Check if deliveryAddress exists before trying to read it */}
+                            {order.deliveryAddress ? (
+                              <div>
+                                <div>{order.deliveryAddress.houseNo}, {order.deliveryAddress.area}</div>
+                                <div>{order.deliveryAddress.city}, {order.deliveryAddress.state}</div>
+                                <div>{order.deliveryAddress.pincode}</div>
+                              </div>
+                            ) : (
+                              'Address not provided'
+                            )}
                           </td>
+                          {/* ----------------------------- */}
+
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`status-badge px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.class}`}>
                               {statusInfo.text}

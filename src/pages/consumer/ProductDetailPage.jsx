@@ -32,7 +32,9 @@ function ProductDetailPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products/${productId}`);
+        const res = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/products/${productId}` // <-- Must be /products/
+        );
         setProduct(res.data);
       } catch (err) {
         console.error('Failed to fetch product:', err);
