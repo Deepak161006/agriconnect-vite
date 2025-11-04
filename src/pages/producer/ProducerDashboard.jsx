@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react'; // 1. IMPORT hooks
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 2. IMPORT axios
+import axios from 'axios'; // This import is required for our new changes
 
 function ProducerDashboard() {
   const navigate = useNavigate();
-  // 3. ADD state for products
   const [myProducts, setMyProducts] = useState([]);
 
   // 4. UPDATE Auth Check
@@ -20,7 +19,7 @@ function ProducerDashboard() {
   useEffect(() => {
     const fetchMyProducts = async () => {
       const token = localStorage.getItem('token');
-      if (!token) return; // Should be covered by auth check, but good practice
+      if (!token) return;
 
       const config = {
         headers: {
@@ -37,7 +36,52 @@ function ProducerDashboard() {
     };
     
     fetchMyProducts();
-  }, []); // [] runs once on page load
+  }, []);
+
+  // --- NEW SECTION: Ask for and save producer's location ---
+  useEffect(() => {
+    // This function saves the location to our new backend endpoint
+    const saveLocation = async (latitude, longitude) => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      try {
+        await axios.put(
+          `${import.meta.env.VITE_API_URL}/api/auth/updateme`, 
+          { location: { latitude, longitude } }, // Send the location object
+          config
+        );
+        console.log('Producer location saved!');
+      } catch (err) {
+        // We just log the error, no need to alert the user
+        console.error('Failed to save location', err);
+      }
+    };
+
+    // This function handles errors (like "Permission Denied")
+    const handleLocationError = (error) => {
+      if (error.code === 1) { // 1 = PERMISSION_DENIED
+        alert('Please consider enabling location. It helps consumers find your products!');
+      } else {
+        console.error("Geolocation error:", error.message);
+      }
+    };
+
+    // Ask the browser for the location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // On success, send to backend
+          saveLocation(position.coords.latitude, position.coords.longitude);
+        }, 
+        handleLocationError // On failure, handle it
+      );
+    } else {
+      console.log("Geolocation is not supported by this browser.");
+    }
+  }, []); // The empty array [] means this runs only ONCE when the page loads
+  // ---------------------------------------------------------
 
   return (
     <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
@@ -93,7 +137,7 @@ function ProducerDashboard() {
                           <div className="flex-shrink-0">
                             <img 
                               className="h-16 w-16 rounded-lg object-cover shadow-sm" 
-                              src={`https://placehold.co/100x100/EFEFEF/333?text=${product.name.charAt(0)}`} 
+                              src={product.image || `https://placehold.co/100x100/EFEFEF/333?text=${product.name.charAt(0)}`} 
                               alt={product.name} 
                             />
                           </div>
