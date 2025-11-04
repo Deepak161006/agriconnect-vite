@@ -9,12 +9,12 @@ function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [orderQuantity, setOrderQuantity] = useState(1);
-
+  
   // --- 1. ADD NEW STATE for the address ---
   const [deliveryAddress, setDeliveryAddress] = useState('');
 
+  // ... (Your other useEffects for auth and fetching product are perfect) ...
   useEffect(() => {
-    // ... (Your auth check useEffect is perfect, no change)
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Consumer') {
       alert('Access Denied. Please log in as a Consumer.');
@@ -23,7 +23,6 @@ function ProductDetailPage() {
   }, [navigate]);
 
   useEffect(() => {
-    // ... (Your fetchProduct useEffect is perfect, no change)
     const fetchProduct = async () => {
       try {
         setLoading(true);
@@ -37,14 +36,11 @@ function ProductDetailPage() {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [productId, navigate]);
+  // -----------------------------------------------------------------
 
-  // --- 2. DELETE the 'getConsumerLocation' and 'saveLocation' functions ---
-  // (We don't need them anymore)
-
-  // --- 3. UPDATE the 'handlePlaceOrder' function ---
+  // --- 2. UPDATE the 'handlePlaceOrder' function ---
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -61,8 +57,6 @@ function ProductDetailPage() {
       alert('Please enter a delivery location.');
       return;
     }
-    
-    // (We removed the location-asking part here)
 
     const config = {
       headers: {
@@ -91,7 +85,6 @@ function ProductDetailPage() {
 
   
   if (loading || !product) {
-    // ... (no change to your loading state)
     return (
       <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 text-center">
         <p className="text-lg text-gray-500">Loading Product...</p>
@@ -162,7 +155,7 @@ function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* --- 4. ADD the Delivery Location input --- */}
+              {/* --- 3. ADD the Delivery Location input --- */}
               <div className="mt-8">
                 <label htmlFor="deliveryAddress" className="text-lg font-medium text-gray-900">
                   Delivery Location
@@ -174,6 +167,7 @@ function ProductDetailPage() {
                   placeholder="Enter your full delivery address..."
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
+                  required // Make it required
                 />
               </div>
 

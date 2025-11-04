@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react'; // 1. IMPORT hooks
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 2. IMPORT axios
+import axios from 'axios';
 
-// 3. REMOVED the static 'initialOrders' data
-
-// We can keep this config object to style our status badges
 const statusConfig = {
   Processing: { text: 'Processing', class: 'bg-blue-100 text-blue-800' },
   Shipped: { text: 'Shipped', class: 'bg-yellow-100 text-yellow-800' },
@@ -13,10 +10,9 @@ const statusConfig = {
 
 function OrdersPage() {
   const navigate = useNavigate();
-  // 4. ADD state for orders
   const [orders, setOrders] = useState([]);
 
-  // 5. UPDATE Auth Check
+  // ... (Your useEffects for auth and fetching orders are perfect) ...
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Producer') {
@@ -25,7 +21,6 @@ function OrdersPage() {
     }
   }, [navigate]);
 
-  // 6. ADD useEffect to fetch incoming orders
   useEffect(() => {
     const fetchOrders = async () => {
       const token = localStorage.getItem('token');
@@ -39,7 +34,6 @@ function OrdersPage() {
 
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/incoming`, config);
-        // Sort by newest first
         setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
         console.error('Failed to fetch orders:', err);
@@ -47,9 +41,10 @@ function OrdersPage() {
     };
 
     fetchOrders();
-  }, []); // [] runs once on page load
+  }, []);
+  // -----------------------------------------------------------------
 
-  // 7. ADD the function to handle status updates
+  // ... (Your handleStatusUpdate and getNextAction functions are perfect) ...
   const handleStatusUpdate = async (orderId, newStatus) => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -61,13 +56,12 @@ function OrdersPage() {
     };
 
     try {
-      // Call the PUT endpoint
-      const res = await axios.put(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
-        { status: newStatus }, // Send the new status in the body
+      const res = await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
+        { status: newStatus },
         config
       );
 
-      // Update the state locally to see the change instantly
       setOrders(currentOrders =>
         currentOrders.map(order =>
           order._id === orderId ? res.data : order
@@ -81,7 +75,6 @@ function OrdersPage() {
     }
   };
 
-  // 8. HELPER function to decide what the button should do
   const getNextAction = (status) => {
     if (status === 'Processing') {
       return { text: 'Mark as Shipped', nextStatus: 'Shipped', disabled: false };
@@ -94,6 +87,7 @@ function OrdersPage() {
     }
     return { text: '', nextStatus: null, disabled: true };
   };
+  // -----------------------------------------------------------------
 
   return (
     <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
@@ -107,16 +101,20 @@ function OrdersPage() {
           <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
             <div className="shadow-lg overflow-hidden border-b border-gray-200 sm:rounded-lg">
               <table className="min-w-full divide-y divide-gray-200">
+                {/* --- 1. UPDATE THE TABLE HEADER --- */}
                 <thead className="bg-gray-200">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Order ID</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Customer</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Product</th>
+                    {/* --- ADD NEW HEADER --- */}
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                      Delivery Address
+                    </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                {/* 9. UPDATE table body to map 'orders' state */}
+                {/* --- 2. UPDATE THE TABLE BODY --- */}
                 <tbody className="bg-white divide-y divide-gray-200">
                   {orders.length > 0 ? (
                     orders.map((order) => {
@@ -125,10 +123,13 @@ function OrdersPage() {
                       
                       return (
                         <tr key={order._id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">...{order._id.slice(-6)}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerName}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                             {order.productDetails.name} ({order.productDetails.quantity})
+                          </td>
+                          {/* --- ADD NEW DATA CELL --- */}
+                          <td className="px-6 py-4 whitespace-normal text-sm text-gray-500 max-w-xs">
+                            {order.deliveryAddress}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`status-badge px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.class}`}>
