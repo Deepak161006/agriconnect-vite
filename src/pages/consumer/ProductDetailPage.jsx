@@ -9,11 +9,17 @@ function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [orderQuantity, setOrderQuantity] = useState(1);
-  
-  // --- 1. ADD NEW STATE for the address ---
-  const [deliveryAddress, setDeliveryAddress] = useState('');
 
-  // ... (Your other useEffects for auth and fetching product are perfect) ...
+  // --- 1. UPDATE state to be an object ---
+  const [deliveryAddress, setDeliveryAddress] = useState({
+    houseNo: '',
+    area: '',
+    city: '',
+    state: '',
+    pincode: ''
+  });
+
+  // ... (Your useEffects for auth and fetching product are perfect) ...
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Consumer') {
@@ -38,23 +44,24 @@ function ProductDetailPage() {
     };
     fetchProduct();
   }, [productId, navigate]);
-  // -----------------------------------------------------------------
 
-  // --- 2. UPDATE the 'handlePlaceOrder' function ---
+  // --- 2. NEW function to handle address object state ---
+  const handleAddressChange = (e) => {
+    setDeliveryAddress(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+  
+  // --- 3. UPDATE handlePlaceOrder ---
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Please log in to place an order.');
-      return;
-    }
-    if (orderQuantity <= 0) {
-      alert('Quantity must be greater than zero.');
-      return;
-    }
+    if (!token) { /* ... (no change) ... */ }
+    if (orderQuantity <= 0) { /* ... (no change) ... */ }
 
-    // --- NEW: Check for the delivery address ---
-    if (!deliveryAddress) {
-      alert('Please enter a delivery location.');
+    // --- NEW: Check for all required address fields ---
+    if (!deliveryAddress.houseNo || !deliveryAddress.area || !deliveryAddress.city || !deliveryAddress.state || !deliveryAddress.pincode) {
+      alert('Please fill out all delivery address fields.');
       return;
     }
 
@@ -71,7 +78,7 @@ function ProductDetailPage() {
         name: product.name,
         quantity: `${orderQuantity} ${product.unit}`
       },
-      deliveryAddress: deliveryAddress // <-- ADD THE ADDRESS
+      deliveryAddress: deliveryAddress // Send the whole object
     };
 
     try {
@@ -84,37 +91,15 @@ function ProductDetailPage() {
   };
 
   
-  if (loading || !product) {
-    return (
-      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 text-center">
-        <p className="text-lg text-gray-500">Loading Product...</p>
-      </main>
-    );
-  }
+  if (loading || !product) { /* ... (no change) ... */ }
 
   return (
     <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0 fade-in">
-        {/* ... (no change to breadcrumbs) ... */}
-        <nav id="breadcrumbs" className="text-sm font-medium mb-6 text-gray-500">
-          <Link to="/dashboard" className="hover:text-blue-600">Home</Link>
-          <span className="mx-2">/</span>
-          <button 
-            onClick={() => {
-              sessionStorage.setItem('preselectedCategory', product.category.toLowerCase());
-              navigate('/dashboard');
-            }} 
-            className="hover:text-blue-600"
-          >
-            {product.category}
-          </button>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{product.name}</span>
-        </nav>
+        {/* ... (no change to breadcrumbs, image, product info) ... */}
         
         <div className="bg-white shadow-xl rounded-lg overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* ... (no change to the image div) ... */}
             <div className="p-4">
               <div className="w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
                 <img 
@@ -129,17 +114,18 @@ function ProductDetailPage() {
             <div className="p-8 flex flex-col justify-center">
               {/* ... (no change to name, price, description) ... */}
               <h1 id="product-name" className="text-3xl font-extrabold text-gray-900 sm:text-4xl">{product.name}</h1>
+              {/* ... (price) ... */}
               <div id="product-price" className="mt-4">
                 <p className="text-4xl font-bold text-gray-900">
                   ₹{product.price} <span className="text-xl font-normal text-gray-500">/ {product.unit}</span>
                 </p>
               </div>
+              {/* ... (description) ... */}
               <div className="mt-6">
                 <h3 className="text-lg font-semibold text-gray-800">Description</h3>
                 <p id="product-description" className="mt-2 text-base text-gray-600">{product.description}</p>
               </div>
-
-              {/* ... (no change to quantity input) ... */}
+              {/* ... (quantity) ... */}
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-gray-900">Order Quantity</h3>
                 <div className="flex items-center gap-4 mt-2">
@@ -155,49 +141,59 @@ function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* --- 3. ADD the Delivery Location input --- */}
+              {/* --- 4. REPLACE textarea with new inputs --- */}
               <div className="mt-8">
-                <label htmlFor="deliveryAddress" className="text-lg font-medium text-gray-900">
+                <label className="text-lg font-medium text-gray-900">
                   Delivery Location
                 </label>
-                <textarea 
-                  id="deliveryAddress"
-                  rows="3"
-                  className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-                  placeholder="Enter your full delivery address..."
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  required // Make it required
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <input 
+                    type="text" name="houseNo" placeholder="House/Flat No." required
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    value={deliveryAddress.houseNo} onChange={handleAddressChange}
+                  />
+                  <input 
+                    type="text" name="area" placeholder="Area" required
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    value={deliveryAddress.area} onChange={handleAddressChange}
+                  />
+                  <input 
+                    type="text" name="city" placeholder="City" required
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    value={deliveryAddress.city} onChange={handleAddressChange}
+                  />
+                  <input 
+                    type="text" name="state" placeholder="State" required
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    value={deliveryAddress.state} onChange={handleAddressChange}
+                  />
+                  <input 
+                    type="text" name="pincode" placeholder="Pincode" required
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                    value={deliveryAddress.pincode} onChange={handleAddressChange}
+                  />
+                </div>
               </div>
+              {/* ------------------------------------- */}
 
               {/* ... (no change to buttons or "Sold By" box) ... */}
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <a 
-                  id="contact-farmer-btn" 
-                  href={`tel:${product.producer.tel || ''}`} 
-                  className="w-full bg-gray-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-gray-700"
-                >
+                {/* ... (contact farmer button) ... */}
+                <a id="contact-farmer-btn" href={`tel:${product.producer.tel || ''}`} className="w-full bg-gray-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-gray-700">
                   <i className="fas fa-phone-alt mr-3"></i>
                   Contact Farmer
                 </a>
-                <button
-                  onClick={handlePlaceOrder}
-                  className="w-full bg-green-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-green-700 transition-transform duration-300 hover:scale-105"
-                >
+                {/* ... (place order button) ... */}
+                <button onClick={handlePlaceOrder} className="w-full bg-green-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-green-700 transition-transform duration-300 hover:scale-105">
                   <i className="fas fa-shopping-basket mr-3"></i>
                   Place Order
                 </button>
               </div>
-
+              {/* ... (sold by box) ... */}
               <div id="sold-by" className="mt-8 p-4 bg-gray-100 rounded-lg">
                 <h3 className="text-md font-medium text-gray-900">Sold By</h3>
                 <div className="flex items-center mt-2">
-                  <img 
-                    className="h-12 w-12 rounded-full" 
-                    src={`https://placehold.co/48x48/EFEFEF/333?text=${product.producer.fullName.charAt(0)}`}
-                    alt="Farmer" 
-                  />
+                  <img className="h-12 w-12 rounded-full" src={`https://placehold.co/48x48/EFEFEF/333?text=${product.producer.fullName.charAt(0)}`} alt="Farmer" />
                   <div className="ml-4">
                     <p className="text-lg font-semibold text-gray-800">{product.producer.fullName}</p>
                     <p className="text-sm text-gray-600">{product.producer.location ? 'Location Shared' : 'Location not set'}</p>

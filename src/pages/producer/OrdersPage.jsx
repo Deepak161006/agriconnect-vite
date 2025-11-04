@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// ... (statusConfig, OrdersPage, navigate, orders state... all the same) ...
 const statusConfig = {
   Processing: { text: 'Processing', class: 'bg-blue-100 text-blue-800' },
   Shipped: { text: 'Shipped', class: 'bg-yellow-100 text-yellow-800' },
@@ -25,13 +26,7 @@ function OrdersPage() {
     const fetchOrders = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
-
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/incoming`, config);
         setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -39,7 +34,6 @@ function OrdersPage() {
         console.error('Failed to fetch orders:', err);
       }
     };
-
     fetchOrders();
   }, []);
   // -----------------------------------------------------------------
@@ -48,27 +42,19 @@ function OrdersPage() {
   const handleStatusUpdate = async (orderId, newStatus) => {
     const token = localStorage.getItem('token');
     if (!token) return;
-
-    const config = {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    };
-
+    const config = { headers: { 'Authorization': `Bearer ${token}` } };
     try {
       const res = await axios.put(
         `${import.meta.env.VITE_API_URL}/api/orders/${orderId}/status`,
         { status: newStatus },
         config
       );
-
       setOrders(currentOrders =>
         currentOrders.map(order =>
           order._id === orderId ? res.data : order
         )
       );
       alert('Order status updated!');
-
     } catch (err) {
       console.error('Failed to update status:', err);
       alert('Failed to update status. Please try again.');
@@ -76,15 +62,9 @@ function OrdersPage() {
   };
 
   const getNextAction = (status) => {
-    if (status === 'Processing') {
-      return { text: 'Mark as Shipped', nextStatus: 'Shipped', disabled: false };
-    }
-    if (status === 'Shipped') {
-      return { text: 'Mark as Delivered', nextStatus: 'Delivered', disabled: false };
-    }
-    if (status === 'Delivered') {
-      return { text: 'Completed', nextStatus: null, disabled: true };
-    }
+    if (status === 'Processing') { /* ... (no change) ... */ }
+    if (status === 'Shipped') { /* ... (no change) ... */ }
+    if (status === 'Delivered') { /* ... (no change) ... */ }
     return { text: '', nextStatus: null, disabled: true };
   };
   // -----------------------------------------------------------------
@@ -128,8 +108,11 @@ function OrdersPage() {
                             {order.productDetails.name} ({order.productDetails.quantity})
                           </td>
                           {/* --- ADD NEW DATA CELL --- */}
-                          <td className="px-6 py-4 whitespace-normal text-sm text-gray-500 max-w-xs">
-                            {order.deliveryAddress}
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {/* This will format the address object nicely */}
+                            <div>{order.deliveryAddress.houseNo}, {order.deliveryAddress.area}</div>
+                            <div>{order.deliveryAddress.city}, {order.deliveryAddress.state}</div>
+                            <div>{order.deliveryAddress.pincode}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`status-badge px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusInfo.class}`}>
