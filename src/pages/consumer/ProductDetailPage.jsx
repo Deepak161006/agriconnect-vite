@@ -8,9 +8,7 @@ function ProductDetailPage() {
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  // 1. ADD state to manage the quantity to order
-  const [orderQuantity, setOrderQuantity] = useState(1); // Default to 1
+  const [orderQuantity, setOrderQuantity] = useState(1);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -38,19 +36,69 @@ function ProductDetailPage() {
     fetchProduct();
   }, [productId, navigate]);
 
-  // 2. ADD the function to handle placing an order
+  // --- NEW: Helper function to get location ---
+  // This turns the old callback into a modern "Promise"
+  const getConsumerLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        return reject(new Error("Geolocation is not supported by this browser."));
+      }
+      // navigator.geolocation.getCurrentPosition(resolve, reject);
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(position.coords),
+        (error) => reject(error)
+      );
+    });
+  };
+
+  // --- NEW: Helper function to save location ---
+  const saveLocation = async (latitude, longitude) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const config = { headers: { 'Authorization': `Bearer ${token}` } };
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/auth/updeme`, 
+        { location: { latitude, longitude } },
+        config
+      );
+      console.log('Consumer location saved!');
+    } catch (err) {
+      // Don't bother the user, just log it
+      console.error('Failed to save consumer location', err);
+    }
+  };
+
+  // --- UPDATED: handlePlaceOrder function ---
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Please log in to place an order.');
       return;
     }
-
     if (orderQuantity <= 0) {
       alert('Quantity must be greater than zero.');
       return;
     }
 
+    // --- 1. ASK FOR LOCATION FIRST ---
+    let userLocation;
+    try {
+      userLocation = await getConsumerLocation();
+      // We got the location, save it in the background
+      saveLocation(userLocation.latitude, userLocation.longitude);
+
+    } catch (locationError) {
+      // --- 2. HANDLE LOCATION ERRORS ---
+      if (locationError.code === 1) { // 1 = PERMISSION_DENIED
+        alert('Location permission is required to place an order. Please allow location and try again.');
+      } else {
+        alert(`Could not get your location: ${locationError.message}`);
+      }
+      return; // Stop the order
+    }
+
+    // --- 3. PROCEED WITH ORDER (if location was successful) ---
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -58,31 +106,27 @@ function ProductDetailPage() {
       }
     };
 
-    // Prepare the order data
     const orderData = {
       productId: product._id,
       productDetails: {
         name: product.name,
-        quantity: `${orderQuantity} ${product.unit}` // e.g., "5 per kg" -> "5 kg"
+        quantity: `${orderQuantity} ${product.unit}`
       }
     };
 
     try {
-      // Call the API to create the order
       await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, config);
-
-      // This is the fix:
       alert('Order placed successfully! You can see it in your "My Orders" list.');
-      // By deleting navigate('/my-orders'), we let the user
-      // click the "My Orders" link themselves, which forces a fresh data load.
+      // We don't navigate, to avoid the stale state bug
 
-    } catch (err) {
-      console.error('Failed to place order:', err);
+    } catch (orderError) {
+      console.error('Failed to place order:', orderError);
       alert('Failed to place order. Please try again.');
     }
   };
 
-
+  // --- (Rest of the JSX is the same) ---
+  
   if (loading || !product) {
     return (
       <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 text-center">
@@ -116,7 +160,7 @@ function ProductDetailPage() {
               <div className="w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
                 <img 
                   id="product-image" 
-                  src={`https://placehold.co/600x400/EFEFEF/333?text=${product.name}`}
+                  src={product.image || `https://placehold.co/600x400/EFEFEF/333?text=${product.name}`}
                   alt={product.name} 
                   className="w-full h-full object-cover" 
                 />
@@ -135,7 +179,6 @@ function ProductDetailPage() {
                 <p id="product-description" className="mt-2 text-base text-gray-600">{product.description}</p>
               </div>
 
-              {/* 3. ADD Quantity Input and "Place Order" Button */}
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-gray-900">Order Quantity</h3>
                 <div className="flex items-center gap-4 mt-2">
@@ -179,7 +222,8 @@ function ProductDetailPage() {
                   />
                   <div className="ml-4">
                     <p className="text-lg font-semibold text-gray-800">{product.producer.fullName}</p>
-                    <p className="text-sm text-gray-600">{product.producer.location || 'Location not set'}</p>
+                    {/* Display location if it exists */}
+                    <p className="text-sm text-gray-600">{product.producer.location ? 'Location Shared' : 'Location not set'}</p>
                   </div>
                 </div>
               </div>
