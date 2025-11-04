@@ -10,7 +10,11 @@ function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [orderQuantity, setOrderQuantity] = useState(1);
 
+  // --- 1. ADD NEW STATE for the address ---
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+
   useEffect(() => {
+    // ... (Your auth check useEffect is perfect, no change)
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Consumer') {
       alert('Access Denied. Please log in as a Consumer.');
@@ -19,6 +23,7 @@ function ProductDetailPage() {
   }, [navigate]);
 
   useEffect(() => {
+    // ... (Your fetchProduct useEffect is perfect, no change)
     const fetchProduct = async () => {
       try {
         setLoading(true);
@@ -36,40 +41,10 @@ function ProductDetailPage() {
     fetchProduct();
   }, [productId, navigate]);
 
-  // --- NEW: Helper function to get location ---
-  // This turns the old callback into a modern "Promise"
-  const getConsumerLocation = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        return reject(new Error("Geolocation is not supported by this browser."));
-      }
-      // navigator.geolocation.getCurrentPosition(resolve, reject);
-      navigator.geolocation.getCurrentPosition(
-        (position) => resolve(position.coords),
-        (error) => reject(error)
-      );
-    });
-  };
+  // --- 2. DELETE the 'getConsumerLocation' and 'saveLocation' functions ---
+  // (We don't need them anymore)
 
-  // --- NEW: Helper function to save location ---
-  const saveLocation = async (latitude, longitude) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    const config = { headers: { 'Authorization': `Bearer ${token}` } };
-    try {
-      await axios.put(
-        `${import.meta.env.VITE_API_URL}/api/auth/updeme`, 
-        { location: { latitude, longitude } },
-        config
-      );
-      console.log('Consumer location saved!');
-    } catch (err) {
-      // Don't bother the user, just log it
-      console.error('Failed to save consumer location', err);
-    }
-  };
-
-  // --- UPDATED: handlePlaceOrder function ---
+  // --- 3. UPDATE the 'handlePlaceOrder' function ---
   const handlePlaceOrder = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -81,24 +56,14 @@ function ProductDetailPage() {
       return;
     }
 
-    // --- 1. ASK FOR LOCATION FIRST ---
-    let userLocation;
-    try {
-      userLocation = await getConsumerLocation();
-      // We got the location, save it in the background
-      saveLocation(userLocation.latitude, userLocation.longitude);
-
-    } catch (locationError) {
-      // --- 2. HANDLE LOCATION ERRORS ---
-      if (locationError.code === 1) { // 1 = PERMISSION_DENIED
-        alert('Location permission is required to place an order. Please allow location and try again.');
-      } else {
-        alert(`Could not get your location: ${locationError.message}`);
-      }
-      return; // Stop the order
+    // --- NEW: Check for the delivery address ---
+    if (!deliveryAddress) {
+      alert('Please enter a delivery location.');
+      return;
     }
+    
+    // (We removed the location-asking part here)
 
-    // --- 3. PROCEED WITH ORDER (if location was successful) ---
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -111,23 +76,22 @@ function ProductDetailPage() {
       productDetails: {
         name: product.name,
         quantity: `${orderQuantity} ${product.unit}`
-      }
+      },
+      deliveryAddress: deliveryAddress // <-- ADD THE ADDRESS
     };
 
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, config);
       alert('Order placed successfully! You can see it in your "My Orders" list.');
-      // We don't navigate, to avoid the stale state bug
-
     } catch (orderError) {
       console.error('Failed to place order:', orderError);
       alert('Failed to place order. Please try again.');
     }
   };
 
-  // --- (Rest of the JSX is the same) ---
   
   if (loading || !product) {
+    // ... (no change to your loading state)
     return (
       <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8 text-center">
         <p className="text-lg text-gray-500">Loading Product...</p>
@@ -138,6 +102,7 @@ function ProductDetailPage() {
   return (
     <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0 fade-in">
+        {/* ... (no change to breadcrumbs) ... */}
         <nav id="breadcrumbs" className="text-sm font-medium mb-6 text-gray-500">
           <Link to="/dashboard" className="hover:text-blue-600">Home</Link>
           <span className="mx-2">/</span>
@@ -153,9 +118,10 @@ function ProductDetailPage() {
           <span className="mx-2">/</span>
           <span className="text-gray-900">{product.name}</span>
         </nav>
-
+        
         <div className="bg-white shadow-xl rounded-lg overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* ... (no change to the image div) ... */}
             <div className="p-4">
               <div className="w-full h-96 bg-gray-200 rounded-lg overflow-hidden">
                 <img 
@@ -168,6 +134,7 @@ function ProductDetailPage() {
             </div>
 
             <div className="p-8 flex flex-col justify-center">
+              {/* ... (no change to name, price, description) ... */}
               <h1 id="product-name" className="text-3xl font-extrabold text-gray-900 sm:text-4xl">{product.name}</h1>
               <div id="product-price" className="mt-4">
                 <p className="text-4xl font-bold text-gray-900">
@@ -179,6 +146,7 @@ function ProductDetailPage() {
                 <p id="product-description" className="mt-2 text-base text-gray-600">{product.description}</p>
               </div>
 
+              {/* ... (no change to quantity input) ... */}
               <div className="mt-8">
                 <h3 className="text-lg font-medium text-gray-900">Order Quantity</h3>
                 <div className="flex items-center gap-4 mt-2">
@@ -194,6 +162,22 @@ function ProductDetailPage() {
                 </div>
               </div>
 
+              {/* --- 4. ADD the Delivery Location input --- */}
+              <div className="mt-8">
+                <label htmlFor="deliveryAddress" className="text-lg font-medium text-gray-900">
+                  Delivery Location
+                </label>
+                <textarea 
+                  id="deliveryAddress"
+                  rows="3"
+                  className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+                  placeholder="Enter your full delivery address..."
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                />
+              </div>
+
+              {/* ... (no change to buttons or "Sold By" box) ... */}
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <a 
                   id="contact-farmer-btn" 
@@ -222,11 +206,11 @@ function ProductDetailPage() {
                   />
                   <div className="ml-4">
                     <p className="text-lg font-semibold text-gray-800">{product.producer.fullName}</p>
-                    {/* Display location if it exists */}
                     <p className="text-sm text-gray-600">{product.producer.location ? 'Location Shared' : 'Location not set'}</p>
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
