@@ -81,12 +81,18 @@ function ProductDetailPage() {
         name: product.name,
         quantity: `${orderQuantity} ${product.unit}`
       },
-      deliveryAddress: deliveryAddress // Send the whole object
+      deliveryAddress: deliveryAddress,
+      orderQuantity: Number(orderQuantity) // <-- ADD THIS LINE
     };
 
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/orders`, orderData, config);
-      alert('Order placed successfully! You can see it in your "My Orders" list.');
+      alert('Order placed successfully!');
+      
+      // This is the fix. We navigate them to the page
+      // *after* the order is confirmed.
+      navigate('/my-orders'); 
+
     } catch (orderError) {
       console.error('Failed to place order:', orderError);
       alert('Failed to place order. Please try again.');
