@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // This import is required for our new changes
+import axios from 'axios';
 
 function ProducerDashboard() {
   const navigate = useNavigate();
   const [myProducts, setMyProducts] = useState([]);
 
-  // 4. UPDATE Auth Check
+  // Auth Check
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Producer') {
@@ -15,11 +15,11 @@ function ProducerDashboard() {
     }
   }, [navigate]);
 
-  // 5. ADD useEffect to fetch producer's products
+  // Fetch Producer's Products
   useEffect(() => {
     const fetchMyProducts = async () => {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) return; 
 
       const config = {
         headers: {
@@ -38,9 +38,8 @@ function ProducerDashboard() {
     fetchMyProducts();
   }, []);
 
-  // --- NEW SECTION: Ask for and save producer's location ---
+  // Ask for and save producer's location
   useEffect(() => {
-    // This function saves the location to our new backend endpoint
     const saveLocation = async (latitude, longitude) => {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -49,17 +48,15 @@ function ProducerDashboard() {
       try {
         await axios.put(
           `${import.meta.env.VITE_API_URL}/api/auth/updateme`, 
-          { location: { latitude, longitude } }, // Send the location object
+          { location: { latitude, longitude } },
           config
         );
         console.log('Producer location saved!');
       } catch (err) {
-        // We just log the error, no need to alert the user
         console.error('Failed to save location', err);
       }
     };
 
-    // This function handles errors (like "Permission Denied")
     const handleLocationError = (error) => {
       if (error.code === 1) { // 1 = PERMISSION_DENIED
         alert('Please consider enabling location. It helps consumers find your products!');
@@ -68,20 +65,42 @@ function ProducerDashboard() {
       }
     };
 
-    // Ask the browser for the location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // On success, send to backend
           saveLocation(position.coords.latitude, position.coords.longitude);
         }, 
-        handleLocationError // On failure, handle it
+        handleLocationError
       );
     } else {
       console.log("Geolocation is not supported by this browser.");
     }
-  }, []); // The empty array [] means this runs only ONCE when the page loads
-  // ---------------------------------------------------------
+  }, []);
+
+  
+  // --- NEW: Delete Product Handler ---
+  const handleDeleteProduct = async (productId) => {
+    // Ask for confirmation first
+    if (!window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const config = { headers: { 'Authorization': `Bearer ${token}` } };
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/products/${productId}`, config);
+      
+      // Update state to remove the product instantly
+      setMyProducts(currentProducts => 
+        currentProducts.filter(product => product._id !== productId)
+      );
+      alert('Product deleted successfully.');
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert('Failed to delete product. Please try again.');
+    }
+  };
 
   return (
     <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
@@ -96,7 +115,6 @@ function ProducerDashboard() {
           <div className="stat-card fade-in bg-white overflow-hidden shadow-lg rounded-lg p-5 transform transition hover:-translate-y-2 duration-300" style={{'--delay': '100ms'}}>
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-green-500 rounded-md p-3"><i className="fas fa-seedling fa-lg text-white"></i></div>
-              {/* 6. MAKE Total Products Dynamic */}
               <div className="ml-5 w-0 flex-1"><dl><dt className="text-sm font-medium text-gray-500 truncate">Total Products</dt><dd className="text-3xl font-semibold text-gray-900">{myProducts.length}</dd></dl></div>
             </div>
           </div>
@@ -122,7 +140,7 @@ function ProducerDashboard() {
           </div>
         </div>
 
-        {/* --- 7. MAKE Product List Dynamic --- */}
+        {/* --- Product List --- */}
         <div className="mt-10 fade-in" style={{ '--delay': '500ms' }}>
           <h3 className="text-2xl font-bold text-gray-900">Your Products</h3>
           <div className="mt-4 bg-white shadow-lg overflow-hidden sm:rounded-md">
@@ -131,7 +149,7 @@ function ProducerDashboard() {
               {myProducts.length > 0 ? (
                 myProducts.map(product => (
                   <li key={product._id}>
-                    <Link to="#" className="block hover:bg-gray-50 transition duration-300">
+                    <div className="block hover:bg-gray-50 transition duration-300">
                       <div className="flex items-center px-4 py-4 sm:px-6">
                         <div className="min-w-0 flex-1 flex items-center">
                           <div className="flex-shrink-0">
@@ -156,9 +174,23 @@ function ProducerDashboard() {
                             </div>
                           </div>
                         </div>
-                        <div><i className="fas fa-chevron-right text-gray-400"></i></div>
+
+                        {/* --- DELETE BUTTON ADDED --- */}
+                        <div className="flex items-center">
+                          <button 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleDeleteProduct(product._id);
+                            }}
+                            className="ml-4 text-sm font-medium text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                        {/* --------------------------- */}
+
                       </div>
-                    </Link>
+                    </div>
                   </li>
                 ))
               ) : (

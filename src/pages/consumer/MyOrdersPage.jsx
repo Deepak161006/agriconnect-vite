@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'; // 1. IMPORT hooks
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 2. IMPORT axios
+import axios from 'axios';
 
-// 3. We'll create this config object to style the badges
 const statusConfig = {
   Processing: { text: 'Processing', class: 'bg-blue-100 text-blue-800' },
   Shipped: { text: 'Shipped', class: 'bg-yellow-100 text-yellow-800' },
@@ -11,10 +10,9 @@ const statusConfig = {
 
 function MyOrdersPage() {
   const navigate = useNavigate();
-  // 4. ADD state to hold the orders
   const [orders, setOrders] = useState([]);
 
-  // 5. UPDATE Auth Check
+  // Auth Check
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token || localStorage.getItem('userType') !== 'Consumer') {
@@ -23,7 +21,7 @@ function MyOrdersPage() {
     }
   }, [navigate]);
 
-  // 6. ADD useEffect to fetch the user's orders
+  // Fetch Consumer's Orders
   useEffect(() => {
     const fetchMyOrders = async () => {
       const token = localStorage.getItem('token');
@@ -37,7 +35,6 @@ function MyOrdersPage() {
 
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/orders/my-orders`, config);
-        // Sort by newest first
         setOrders(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
         console.error('Failed to fetch orders:', err);
@@ -45,9 +42,9 @@ function MyOrdersPage() {
     };
 
     fetchMyOrders();
-  }, []); // [] runs once on page load
+  }, []);
 
-  // 7. UPDATE "View Details" to an alert
+  // View Details
   const handleViewDetails = (order) => {
     alert(
       `Order Details:\n\n` +
@@ -57,6 +54,31 @@ function MyOrdersPage() {
       `Status: ${order.status}`
     );
   };
+
+  // --- NEW: Cancel Order Handler ---
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    const config = { headers: { 'Authorization': `Bearer ${token}` } };
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, config);
+      
+      // Update state to remove the order instantly
+      setOrders(currentOrders => 
+        currentOrders.filter(order => order._id !== orderId)
+      );
+      alert('Order cancelled successfully.');
+    } catch (err) {
+      const errorMsg = err.response ? err.response.data.msg : 'Please try again.';
+      alert(`Failed to cancel order: ${errorMsg}`);
+      console.error('Failed to cancel order:', errorMsg);
+    }
+  };
+
 
   return (
     <main className="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
@@ -79,7 +101,6 @@ function MyOrdersPage() {
                     <th scope="col" className="relative px-6 py-3"><span className="sr-only">View</span></th>
                   </tr>
                 </thead>
-                {/* 8. UPDATE table body to map 'orders' state */}
                 <tbody className="bg-white divide-y divide-gray-200">
                   {orders.length > 0 ? (
                     orders.map((order) => {
@@ -99,7 +120,20 @@ function MyOrdersPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-semibold">
                             {order.productDetails.name}
                           </td>
+
+                          {/* --- UPDATED: Actions Cell --- */}
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            
+                            {/* Only show "Cancel" if the order is "Processing" */}
+                            {order.status === 'Processing' && (
+                              <button
+                                onClick={() => handleCancelOrder(order._id)}
+                                className="text-red-600 hover:text-red-800 transition-colors mr-4"
+                              >
+                                Cancel Order
+                              </button>
+                            )}
+
                             <button
                               onClick={() => handleViewDetails(order)}
                               className="view-details-btn text-blue-600 hover:text-blue-800 transition-colors"
